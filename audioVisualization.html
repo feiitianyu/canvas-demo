@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      background-color: black;
+    }
+
+
+  </style>
+</head>
+<body>
+  <canvas></canvas>
+  <!-- <div style="border: 1px solid white;width: 100%;margin-bottom: 20px;"></div> -->
+  <audio src="./mixkit-tech-house-vibes-130.mp3" controls></video>
+  <script>
+    const audioEle = document.querySelector('audio')
+    const cvs = document.querySelector('canvas')
+    const ctx = cvs.getContext('2d')
+
+    console.log('---', window.devicePixelRatio)
+    console.log('-', window.innerWidth)
+    console.log('-', window.innerHeight)
+    console.log('--',window.innerWidth * window.devicePixelRatio)
+    console.log('--',window.innerHeight * window.devicePixelRatio)
+
+    function initCvs() {
+      cvs.width = window.innerWidth * window.devicePixelRatio
+      cvs.height = window.innerHeight / 2 * window.devicePixelRatio
+    }
+    initCvs()
+
+    let isInit = false
+    let dataArray, analyser
+    audioEle.onplay = function() {
+      if(isInit) {
+        return
+      }
+      const audCtx = new AudioContext()
+      const source = audCtx.createMediaElementSource(audioEle)
+      analyser = audCtx.createAnalyser()
+      analyser.fftSize = 512
+      dataArray = new Uint8Array(analyser.frequencyBinCount)
+      source.connect(analyser)
+      analyser.connect(audCtx.destination)
+
+      isInit = true
+    }
+
+    function draw() {
+      requestAnimationFrame(draw)
+      const { width, height } = cvs
+      ctx.clearRect(0, 0, width, height)
+      if(!isInit) {
+        return
+      }
+      analyser.getByteFrequencyData(dataArray)
+      const len = dataArray.length
+      const barWidth = width / len
+      ctx.fillStyle = '#78C5F7'
+      for (let i = 0; i < len; i++) {
+        const data = dataArray[i]
+        const barHeight = data / 255 * height
+        const x = i * barWidth
+        const y = height - barHeight
+        ctx.fillRect(x, y, barWidth, barHeight)
+      }
+    }
+
+    draw()
+  </script>
+</body>
+</html>
